@@ -10,6 +10,12 @@ import UIKit
 
 class PhotosCollectionViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
     
+    // MARK: - Properties
+    
+    let cache = Cache<Int, Data>()
+    
+    // MARK: - VC Lifecycle
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -68,6 +74,11 @@ class PhotosCollectionViewController: UIViewController, UICollectionViewDataSour
         
         // TODO: Implement image loading here
         
+        if let cacheImage = cache.value(key: photoReference.id) { // Check if image is in cache. If so then load it.
+            cell.imageView.image = UIImage(data: cacheImage)
+            return
+        }
+        
         URLSession.shared.dataTask(with: photoReference.imageURL.usingHTTPS!) { data, response, error in
             if let error = error {
                 return NSLog("Error fetching image: \(error)")
@@ -80,6 +91,7 @@ class PhotosCollectionViewController: UIViewController, UICollectionViewDataSour
             if let data = data {
                 DispatchQueue.main.async {
                     cell.imageView.image = UIImage(data: data)
+                    self.cache.cache(value: data, key: photoReference.id) // save image data to cache so it's available later
                 }
             }
             }.resume()
